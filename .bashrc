@@ -51,6 +51,7 @@ alias HAN4='nohup gedit /run/media/mmeloux/Documents/Documents/Multimédia/Frien
 alias HAN5='nohup gedit /run/media/mmeloux/Documents/Documents/Multimédia/Friends/Hannah\ Barton/Level\ 5\ planks\ orange >&/dev/null &'
 alias HANM='nohup gedit /run/media/mmeloux/Documents/Documents/Multimédia/Friends/Hannah\ Barton/Level\ meta >&/dev/null &'
 alias HANC='sqlite3 ~/.Skype/pie3636/main.db ".dump Messages" |grep -v "thread.skype" | grep bluerazor71 |wc -l'
+#time sqlite3 ~/.Skype/pie3636/main.db ".dump Messages" | grep -v "thread.skype" | grep bluerazor71 | sed -e "s/^[^']*'[^']*','[^']*','//g" | sed -e "s/\([^']\)'[^']*'[^']*',\(NULL\|'[^']*'\),\([0-9]*\)[A-Z0-9,]*\(NULL\|'[^']*'\),[^']*'\(.*\)'.*/\1 (\3): \5/g" | sed -e 's/<[^>]*>//g' | sed -e "s/&apos;/'/g" | sed -e 's/&quot;/"/g' > ~/Convo_Hannah
 
 # Work
 alias IJ='sh ~/idea-IC-135.1289/bin/idea.sh &'
