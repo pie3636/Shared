@@ -36,8 +36,11 @@ alias RND='find -type f|shuf|head -n 1|xargs -d "\n" xdg-open&'
 alias emacs='vim'
 # Disk usage repartition
 alias DUF='du -sk * | sort -n | while read size fname; do for unit in k M G T P E Z Y; do if [ $size -lt 1024 ]; then echo -e "${size}${unit}\t${fname}"; break; fi; size=$((size/1024)); done; done'
-alias WATCH="tail -fs 0.2 -n $LINES"
-alias PWD="pwgen --no-capitalize 20 1"
+alias WATCH='tail -fs 0.2 -n $LINES'
+alias PWD='pwgen --no-capitalize 20 1'
+alias DNF='sudo dnf -vvvvvvv'
+alias GITL='git log --oneline | nl -v0 | sed "s/^ \+/&HEAD~/"'
+alias SWAP='sudo swapoff /dev/dm-0 && sudo swapon /dev/dm-0'
 
 # Meta
 alias VIM='vim ~/.bashrc'
@@ -61,6 +64,7 @@ alias CMH='cd ~/workspace/Color\ Madness/bin && nohup gedit ../js2/main.js ../js
 alias CM2='cd ~/workspace/Color\ Madness/bin && nohup gedit ../js/main.js ../js/events.js ../js/draw.js ../js/utilities.js ../css/style.css ../index.html >&/dev/null &'
 alias PE='cd ~/workspace/Project\ Euler\ X/; nohup gedit main.cpp include/problems.h problems.cpp math_euler.cpp include/math_euler.h >&/dev/null &'
 alias FI='nohup gedit /run/media/mmeloux/Documents/Documents/Archive\ documents/Films.txt >&/dev/null &'
+alias NET='nohup ~/netbeans-8.0.1/bin/netbeans >&/dev/null &'
 
 # Beep
 alias PR='PROMPT_COMMAND="echo -en " && echo Success'
@@ -72,6 +76,14 @@ alias PL='setxkbmap pl && echo PL'
 alias BEPO='setxkbmap bepo && echo BEPO'
 alias EN='setxkbmap us && echo US'
 
+# Git
+alias PUSH='git push'
+alias PULL='git pull'
+alias STASH='git stash'
+alias FETCH='git fetch'
+alias COMMIT='git commit -am'
+alias ADD='git add'
+
 # Navigation
 alias LL='ls -alF'  #'list long'
 alias LA='ls -A'    #'list all'
@@ -81,19 +93,38 @@ alias LC='ls -c'    #'list changed'
 alias CD='cd; clear'
 alias CL='cd; clear'
 alias ..='cd ..'
-alias ++="pushd .. > /dev/null"
-alias ,,="popd > /dev/null"
+alias ,,='pushd .. > /dev/null'
+alias ++='popd > /dev/null'
+alias ¤="cd -"
 
 # Binds
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
 modprobe cpufreq_ondemand
-PATH=" /opt/texlive/2014/bin/x86_64-linux:$PATH"
+PATH="$HOME/Projets_Ensimag/Projet_GL/src/main/bin":"$PATH"
+PATH="$HOME/Projets_Ensimag/Projet_GL/src/test/script":"$PATH"
+PATH="$HOME/Projets_Ensimag/Projet_GL/src/test/script/launchers":"$PATH"
+PATH="/opt/texlive/2014/bin/x86_64-linux":"$PATH"
+export PATH
+CDPATH=:..:~:~/Téléchargements
 alias git='LANG=en_US git'
 PAGER=less
 export PAGER
 #set -o vi
+set -o notify
+shopt -s autocd
+shopt -s cdable_vars
+shopt -s cdspell
+shopt -s checkjobs
+shopt -s cmdhist
+shopt -s dirspell
+shopt -s dotglob
+shopt -s expand_aliases
+shopt -s extglob
+shopt -s extquote
+shopt -s histappend
+shopt -s nocaseglob
 
 function MKCD { mkdir -p "$1" && cd "$1"; }
 function CCAT { grep --color=always -rnC3 -- "$@" . | less -R; }
@@ -105,6 +136,10 @@ function RME { cd "$1" && find . -type d -empty -exec rmdir {} \;; }
 function cd { builtin cd "${@}" && ls; }
 function CPU() { for i in " " {1..7}; do grep "cpu$i" /proc/stat | awk '{usage=int(($2+$4)*10000/($2+$4+$5))/100} END {print usage "%"}' | sed -e "s/\%/%/g"; done; }
 function POS() { echo -ne "\033[6n" && read -s -d\[ foo && read -s -d R pos; } # Request position, discard first part of answer, store rest
+function HANR() { time sqlite3 ~/.Skype/pie3636/main.db ".dump Messages" | grep -v "thread.skype" | grep bluerazor71 | cut -d "," -f 6,10,18 | sed -e "s/'\(.*\)',\(.*\),'\([^']*\)'*/\1 (\2): \3/" | sed -e 's/<[^>]*>//g' | sed -e "s/&apos;/'/g" | sed -e 's/&quot;/"/g' > ~/Convo_Hannah; }
+function CAL() { echo "scale=10;$*" | bc -l; }
+function ,() { pushd "$1" > /dev/null; }
+function MET() { play -n -c1 synth 0.001 sine 1000 pad `awk "BEGIN { print 60/$1 -.001 }"` repeat 9999999; }
 function COL {
 local START=${1:-1}
 local END=${2:-$START}
@@ -259,23 +294,54 @@ errortest=$(if [[ "$returnStatus" != "0" ]]
                 git_status=":${git_status}"
         fi
         currentdir=$(pwd | sed "s/${sedhome}/~/g")
+        battest=$(acpi | tr ' ' '\n' | grep '%' | tr -d '%,')
+        if [[ "$battest" == "100" ]]
+        then
+                battery="$purple🔌⚡"
+        elif [[ "$battest" -gt "89" ]]
+        then
+                battery="$green█ "
+        elif [[ "$battest" -gt "79" ]]
+        then
+                battery="$green▇ "
+        elif [[ "$battest" -gt "69" ]]
+        then
+                battery="$green▆ "
+        elif [[ "$battest" -gt "59" ]]
+        then
+                battery="$green▅ "
+        elif [[ "$battest" -gt "49" ]]
+        then
+                battery="$green▄ "
+        elif [[ "$battest" -gt "39" ]]
+        then
+                battery="$orange▃ "
+        elif [[ "$battest" -gt "29" ]]
+        then
+                battery="$orange▂ "
+        elif [[ "$battest" -gt "19" ]]
+        then
+                battery="$red▁ "
+        else
+                battery="$red✘!"
+        fi
         stopped=$(jobs -s | wc -l | tr -d " ")
         running=$(jobs -r | wc -l | tr -d " ")
         dateget=$(date +"%a %D %X")
         filecount=$(ls -1 | wc -l | tr -d ' ')
         size=$(ls -lah | grep -m 1 total | /bin/sed "s/total //")
-        length=$(echo "$promusername@$promhostname on $interface jobs:$running$stopped $filecount files $size $mem $swap $dateget" | wc -c)
+        length=$(echo "$promusername@$promhostname on $interface jobs:$running$stopped $filecount files $size $mem $swap __ $dateget" | wc -c)
         echo -en "\033[s\
                 \033[H\033[K"
         echo -en "$BLACK$bold$namecolor"
         if [ $length -gt $COLUMNS ]; then
-                echo -en "$promusername@$promhostname$normal$white$BLACK on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightorange$size $lightpurple$mem $lightgreen$swap $BLACK$(printf "\n%$((COLUMNS-23))s\n") $lightpurple$dateget$normal$BLACK$green\033[K\n$currentdir \
+                echo -en "$promusername@$promhostname$normal$white$BLACK on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightorange$size $lightpurple$mem $lightgreen$swap $BLACK$(printf "\n%$((COLUMNS-26))s\n")$yellow$battery $lightpurple$dateget$normal$BLACK$green\033[K\n$currentdir \
                         \033[K\
-                        \033[u\033[1A\033[1B$default$DEFAULT" # 23 = wc (dateget)
+                        \033[u\033[1A\033[1B$default$DEFAULT" # 26 = wc (__ dateget)
                 #POS
                 #if [ ${pos:0:1} == "2" ]; then if [ ${pos:1:1} == ";" ]; then echo; echo; fi; fi # Fix first line
         else
-                echo -en "$promusername@$promhostname$normal$white$BLACK on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightorange$size $lightpurple$mem $lightgreen$swap $BLACK$(printf "%$((COLUMNS-length))s\n") $lightpurple$dateget\033[K\n$normal$BLACK$green$currentdir \
+                echo -en "$promusername@$promhostname$normal$white$BLACK on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightorange$size $lightpurple$mem $lightgreen$swap $BLACK$(printf "%$((COLUMNS-length))s\n")$yellow$battery $lightpurple$dateget\033[K\n$normal$BLACK$green$currentdir \
                         \033[K\
                         \033[u\033[1A\033[1B$default$DEFAULT"
                 #POS
@@ -289,16 +355,3 @@ export PS1;
 }
 
 makePrompt
-
-source /Xilinx/env-12.2.sh
-source ~/TP/CEP/cep_leroussm_melouxm/bin/settings.sh
-PATH=$PATH:/opt/mips-tools-cep/bin
-export PATH
-alias ccat='pygmentize -g'
-alias douille='ddd'
-alias RND6='GET "https://www.random.org/integers/?num=1&min=1&max=6&col=1&base=10&format=plain&rnd=new"'
-alias RNDB='cat /dev/urandom | hexdump -b | head -n 1 | cut -d " " -f 2 | sed -e "s/..//" | sed -e "s/$/\/4/" | bc'
-clear
-
-PS1='\e[0;32m[\u@\h \W]\e[0m\$ '
-
