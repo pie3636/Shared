@@ -43,6 +43,7 @@ alias ++="pushd .. > /dev/null"
 alias ,,="popd > /dev/null"
 alias ii="cd -"
 alias git='LANG=en_US git'
+alias dirs="dirs -v"
 
 alias RM='git rm'
 alias ADD='git add'
