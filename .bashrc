@@ -20,6 +20,8 @@ PATH=$PATH:~/TP/2A/GL/Projet_GL/src/main/bin
 PATH=$PATH:~/TP/2A/GL/Projet_GL/src/test/script/launchers
 PATH=$PATH:~/TP/2A/GL/Projet_GL/src/test/script
 export PATH
+alias SSH='echo ssh-copy-id -i \~/.ssh/[Public key] [User]@[Server]'
+alias SRC='source ~/.bashrc'
 alias ccat='pygmentize -g'
 alias RND6='GET "https://www.random.org/integers/?num=1&min=1&max=6&col=1&base=10&format=plain&rnd=new"'
 alias RND='cat /dev/urandom | hexdump -b | head -n 1 | cut -d " " -f 2 | sed -e "s/..//" | sed -e "s/$/\/4/" | bc'
@@ -48,6 +50,7 @@ alias dirs="dirs -v"
 alias RM='git rm'
 alias ADD='git add'
 alias LOL='git lol'
+alias GREP='git grep'
 alias PUSH='git push'
 alias PULL='git pull'
 alias INIT='git init'
