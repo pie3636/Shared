@@ -1,16 +1,24 @@
-#
+#!/bin/bash
 # ~/.bashrc
 #
 
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-# .bashrc
-
 CDPATH=:..:~:~/Downloads
 PAGER=less
 export PAGER
-#set -o vi
+export XMODIFIERS="@im=none"
+export HISTFILESIZE=
+export HISTSIZE=
+export HISTTIMEFORMAT="[%F %T] "
+export HISTFILE=~/.bash_eternal_history
+export HISTCONTROL=ignoreboth
+TSWP=$(free | grep Part | tr -s ' ' | cut -d ' ' -f 3)
+TMEM=$(free | grep Mem | tr -s ' ' | cut -d ' ' -f 2)
+export TSWP
+export TMEM
+#set -o i
 set -o notify
 shopt -s autocd
 shopt -s cdable_vars
@@ -40,7 +48,7 @@ alias WATCH='tail -fs 0.2 -n $LINES'
 alias GITL='git log --oneline | nl -v0 | sed "s/^ \+/&HEAD~/"'
 alias SWAP='sudo swapoff /dev/sda7 && sudo swapon /dev/sda7'
 alias YT='youtube-dl --extract-audio --audio-format mp3'
-alias PAC='pacman -Qtdq > /dev/null && sudo pacman -Rns $(pacman -Qtdq | sed -e '\'':a;N;0ba;s/\n/ /g'\'')'
+alias PAC='pacman -Qtdq'
 
 # Randomness
 alias RND='find -type f|shuf|head -n 1|xargs -d "\n" xdg-open&'
@@ -65,14 +73,14 @@ alias MAKE="for i in {1..25}; do echo; done; make -j 2"
 alias MAKE2="for i in {1..25}; do echo; done; make -j 2 clean && make -j 2"
 
 # Beep
-alias PR='PROMPT_COMMAND="echo -en " && echo Success'
-alias PRE='PROMPT_COMMAND="prompt_command" && echo End'
+alias PR='PROMPT_COMMAND="history-a; echo -en " && echo Success'
+alias PRE='PROMPT_COMMAND="history-a; prompt_command" && echo End'
 
 # Keyboard layouts
-alias FR='setxkbmap fr && echo FR'
+alias FR='setxkbmap fr -option compose:rctrl && xmodmap ~/.Xmodmap && echo FR'
 alias PL='setxkbmap pl && echo PL'
 alias BEPO='setxkbmap bepo && echo BEPO'
-alias EN='setxkbmap us && echo US'
+alias EN='setxkbmap us -option compose:rctrl && echo US'
 
 # Git
 alias PUSH='git push'
@@ -84,7 +92,7 @@ alias COMMITA='git commit -am'
 alias GITRESET='git fetch --all; git reset --hard origin/master'
 
 # Navigation
-LS_COLORS=$LS_COLORS:'di=1;44:' ; export LS_COLORS
+export LS_COLORS=$LS_COLORS:'di=1;44:'
 alias ls='ls --color=auto'
 alias LD='ls -d .*/ */'
 alias LL='ls -alF'  #'list long'
@@ -102,6 +110,8 @@ alias ii="cd -"
 # Binds
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
+bind '"\e[1;5D": backward-word'
+bind '"\e[1;5C": forward-word'
 
 # Disk usage repartition
 alias DUF='du -sk * | sort -n | while read size fname; do for unit in k M G T P E Z Y; do if [ $size -lt 1024 ]; then echo -e "${size}${unit}\t${fname}"; break; fi; size=$((size/1024)); done; done'
@@ -114,196 +124,188 @@ alias HANC='sqlite3 ~/.Skype/pie3636/main.db ".dump Messages" |grep -v "thread.s
 
 # modprobe cpufreq_ondemand
 
-function MKCD { mkdir -p "$1" && cd "$1"; }
+function MKCD { mkdir -p "$1" && cd "$1" || return; }
 function CCAT { grep --color=always -rnC3 -- "$@" . | less -R; }
-function CK { xdotool click --delay $(echo 1000/$1|bc) --repeat $(echo $2*$1|bc) 1; }
+function CK { xdotool click --delay $(echo 1000/"$1"|bc) --repeat $(echo "$2"*"$1"|bc) 1; }
 function QUIET { ( $* &> /dev/null & ); }
 function LQ { nohup "$@"&exit; }
 function cd { builtin cd "${@}" && ls; }
 function CPU() { for i in " " {1..3}; do grep "cpu$i" /proc/stat | awk '{usage=int(($2+$4)*10000/($2+$4+$5))/100} END {print usage "%"}' | sed -e "s/\%/%/g"; done; }
 function POS() { echo -ne "\033[6n" && read -s -d\[ foo && read -s -d R pos; } # Request position, discard first part of answer, store rest
-function HANR() { time sqlite3 ~/.Skype/pie3636/main.db ".dump Messages" | grep -v "thread.skype" | grep bluerazor71 | cut -d "," -f 6,10,18 | sed -e "s/'\(.*\)',\(.*\),'\([^']*\)'*/\1 (\2): \3/" | sed -e 's/<[^>]*>//g' | sed -e "s/&apos;/'/g" | sed -e 's/&quot;/"/g' > ~/Convo_Hannah; }
 function CAL() { echo "scale=10;$*" | bc -l; }
 function ,() { pushd "$1" > /dev/null; }
-function MET() { play -n -c1 synth 0.001 sine 1000 pad `awk "BEGIN { print 60/$1 -.001 }"` repeat 9999999; }
+function MET() { play -n -c1 synth 0.001 sine 1000 pad $(awk "BEGIN { print 60/$1 -.001 }") repeat 9999999; }
 function COL {
-        local START=${1:-1}
-        local END=${2:-$START}
-        local FORM=${3:-0}
-        for fgbg in 38 48; do
-                for (( color=$START; color<=$END; color++ )); do
-                        echo -en "\e[${fgbg};5;${color}m ${color}\t\e[0m"
-                        if [ $((($color - $START + 1) % 10)) == 0 ]; then echo; fi
-                done
-                echo
+    local START=${1:-1}
+    local END=${2:-$START}
+    local FORM=${3:-0}
+    for fgbg in 38 48; do
+        for (( color=$START; color<=$END; color++ )); do
+            echo -en "\e[${fgbg};5;${color}m ${color}\t\e[0m"
+            if [ $((($color - $START + 1) % 10)) == 0 ]; then echo; fi
         done
-        if [ $FORM -ne 0 ]
-        then
-                for clfg in {30..37} {90..97} 39; do
-                        for attr in 0 1 2 3 4 7 ; do
-                                echo -en "\e[${attr};${clfg}m[${attr};${clfg}m \e[0m"
-                        done
-                        echo
-                done
-        fi
+        echo
+    done
+    if [ "$FORM" -ne 0 ]
+    then
+        for clfg in {30..37} {90..97} 39; do
+            for attr in 0 1 2 3 4 7 ; do
+                echo -en "\e[${attr};${clfg}m[${attr};${clfg}m \e[0m"
+            done
+            echo
+        done
+    fi
 }
 
 function IP {
-        echo -n "Ethernet: "
-        ip addr show eth0 | grep inet | awk '{print $2}' | tr "\n" " " | cut -f1 -d"/"
-        echo -n "Wi-fi:    "
-        ip addr show wlp2s0 | grep inet | awk '{print $2}' | tr "\n" " " | cut -f1 -d"/"
-        echo -n "Public:   "
-        curl http://icanhazip.com/
+    echo -n "Ethernet: "
+    ip addr show eth0 | grep inet | awk '{print $2}' | tr "\n" " " | cut -f1 -d"/"
+    echo -n "Wi-fi:    "
+    ip addr show wlp2s0 | grep inet | awk '{print $2}' | tr "\n" " " | cut -f1 -d"/"
+    echo -n "Public:   "
+    curl http://icanhazip.com/
 }
 
 man() {
-        env \
-                LESS_TERMCAP_mb="$(printf "\e[1;31m")" \
-                LESS_TERMCAP_md="$(printf "\e[1;31m")" \
-                LESS_TERMCAP_me="$(printf "\e[0m")" \
-                LESS_TERMCAP_se="$(printf "\e[0m")" \
-                LESS_TERMCAP_so="$(printf "\e[1;44;33m")" \
-                LESS_TERMCAP_ue="$(printf "\e[0m")" \
-                LESS_TERMCAP_us="$(printf "\e[1;32m")" \
-                man "$@"
-}
-
-# Prompt
-#PS1="[\t-\u@\h \w]\$ "
-#PS1='if [ $? = 0 ]; then echo "\[\e[32m\]✔ "; else echo "\[\e[31m\]✘ "; fi`\[\e[0;37m\]\A \[\033[01;30m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[01;30m\]\$\[\e[0m\]'
-#PS1="\e[0;33m[\e[0;31m\t\e[m-\e[0;36m\u\e[0;32m@\h \e[0;35m\w\e[0;33m]\e[m$ "
+    env \
+        LESS_TERMCAP_mb="$(printf "\e[1;31m")" \
+        LESS_TERMCAP_md="$(printf "\e[1;31m")" \
+        LESS_TERMCAP_me="$(printf "\e[0m")" \
+        LESS_TERMCAP_se="$(printf "\e[0m")" \
+        LESS_TERMCAP_so="$(printf "\e[1;44;33m")" \
+        LESS_TERMCAP_ue="$(printf "\e[0m")" \
+        LESS_TERMCAP_us="$(printf "\e[1;32m")" \
+        man "$@"
+    }
 
 function _show_git_status() {
-        local unknown untracked stash clean ahead behind staged dirty diverged
-        branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-        if [[ -n "$branch" ]]; then
-                git_status=$(git status 2> /dev/null)
-                color='38;5;20'
-                if [[ $git_status =~ 'Untracked files' ]]; then
-                        color='38;5;76'
-                        branch="${branch}?"
-                fi
-                if git stash show &>/dev/null; then
-                        color='38;5;76'
-                        branch="${branch}+"
-                fi
-                if [[ $git_status =~ 'working directory clean' ]]; then
-                        color=$'38;5;82'
-                fi
-                if [[ $git_status =~ 'Your branch is ahead' ]]; then
-                        color='38;5;226'
-                        branch="${branch}>"
-                fi
-                if [[ $git_status =~ 'Your branch is behind' ]]; then
-                        color='38;5;142'
-                        branch="${branch}<"
-                fi
-                if [[ $git_status =~ 'Changes to be committed' ]]; then
-                        color='38;5;214'
-                fi
-                if [[ $git_status =~ 'Changed but not updated' ||
-                        $git_status =~ 'Changes not staged'      ||
-                        $git_status =~ 'Unmerged paths' ]]; then
-                color='38;5;202'
+    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [[ -n "$branch" ]]; then
+        git_status=$(git status 2> /dev/null)
+        color='38;5;20'
+        if [[ $git_status =~ 'Untracked files' ]]; then
+            color='38;5;76'
+            branch="${branch}?"
         fi
-        if [[ $git_status =~ 'Your branch'.+diverged ]]; then
-                color=$'38;5;196'
-                branch="${branch}!"
+        if git stash show &>/dev/null; then
+            color='38;5;76'
+            branch="${branch}+"
         fi
-        echo -ne "[\033[${color}m${branch}\033[0m]"
-fi
-return 0
-}
+        if [[ $git_status =~ 'working directory clean' ]]; then
+            color=$'38;5;82'
+        fi
+        if [[ $git_status =~ 'Your branch is ahead' ]]; then
+            color='38;5;226'
+            branch="${branch}>"
+        fi
+        if [[ $git_status =~ 'Your branch is behind' ]]; then
+            color='38;5;142'
+            branch="${branch}<"
+        fi
+        if [[ $git_status =~ 'Changes to be committed' ]]; then
+            color='38;5;214'
+        fi
+        if [[ $git_status =~ 'Changed but not updated' ||
+            $git_status =~ 'Changes not staged' ||
+            $git_status =~ 'Unmerged paths' ]]; then
+                    color='38;5;202'
+                fi
+                if [[ $git_status =~ 'Your branch'.+diverged ]]; then
+                    color=$'38;5;196'
+                    branch="${branch}!"
+                fi
+                echo -ne "[\033[${color}m${branch}\033[0m]"
+            fi
+            return 0
+        }
 
-function makePrompt {
+    function makePrompt {
         local pred="\[\033[0;31m\]"
         local pyellow="\[\e[1m\033[38;5;202m\]"
         bold=$'\e[1m'; underline=$'\e[4m'; dim=$'\e[2m'; strikethrough=$'\e[9m'; blink=$'\e[5m'; reverse=$'\e[7m'; hidden=$'\e[8m'; normal=$'\e[0m'; black=$'\e[30m'; red=$'\e[31m'; green=$'\e[32m'; orange=$'\e[33m'; blue=$'\e[34m'; purple=$'\e[35m'; aqua=$'\e[36m'; gray=$'\e[37m'; darkgray=$'\e[90m'; lightred=$'\e[91m'; lightgreen=$'\e[92m'; lightyellow=$'\e[93m'; lightblue=$'\e[94m'; lightpurple=$'\e[95m'; lightaqua=$'\e[96m'; white=$'\e[97m'; default=$'\e[39m'; BLACK=$'\e[40m'; RED=$'\e[41m'; GREEN=$'\e[42m'; ORANGE=$'\e[43m'; BLUE=$'\e[44m'; PURPLE=$'\e[45m'; AQUA=$'\e[46m'; GRAY=$'\e[47m'; DARKGRAY=$'\e[100m'; LIGHTRED=$'\e[101m'; LIGHTGREEN=$'\e[102m'; LIGHTYELLOW=$'\e[103m'; LIGHTBLUE=$'\e[104m'; LIGHTPURPLE=$'\e[105m'; LIGHTAQUA=$'\e[106m'; WHITE=$'\e[107m'; DEFAULT=$'\e[49m';
         if [ "$UID" != "0" ]; then
-                local SYMBOL="$"
-                local UNAME_COLOR="\[\033[1;35m\]"
-                local FINAL_COLOR="\[\033[0m\]"
-                namecolor="$white"
+            local SYMBOL="$"
+            local UNAME_COLOR="\[\033[1;35m\]"
+            local FINAL_COLOR="\[\033[0m\]"
+            namecolor="$white"
         else
-                local SYMBOL="#"
-                local UNAME_COLOR="\[\033[1;34m\]"
-                local FINAL_COLOR="\[\033[0;32m\]"
-                namecolor="$red"
+            local SYMBOL="#"
+            local UNAME_COLOR="\[\033[1;34m\]"
+            local FINAL_COLOR="\[\033[0;32m\]"
+            namecolor="$red"
         fi
         interface=$(/usr/bin/tty | /bin/sed -e 's:/dev/::')
-        promusername="$USER"
-        promhostname="$HOSTNAME"
-        mem=$(echo "scale=1;100*$(free | grep Mem | sed -e "s/ \+/ /g" |cut -d " " -f 7)/8062472"|bc | sed -e "s/$/%/g" | sed -e "s/^/Mem:/g")
-        swap=$(echo "scale=1;100*$(free | grep Swap | sed -e "s/ \+/ /g" |cut -d " " -f 4)/8142844"|bc | sed -e "s/$/%/g" | sed -e "s/^/Swap:/g")
+        usr="$USER"
+        hst="$HOSTNAME"
+        mem="Mem:$(echo "scale=1;100*$(free | grep Mem | tr -s ' ' |cut -d " " -f 7)/$TMEM"|bc)%"
+        swap="Swap:$(echo "scale=1;100*$(free | grep Partition | tr -s ' ' |cut -d " " -f 4)/$TSWP"|bc)%"
         sedhome=$(sed 's/[][\.*^$(){}?+|/]/\\&/g' <<< "$HOME")
         function prompt_command {
-                returnStatus="$?"
-                errortest=$(if [[ "$returnStatus" != "0" ]]
+            returnStatus="$?"
+            errortest=$(if [[ "$returnStatus" != "0" ]]
         then
-                echo " $bold$lightred✘ "
+            echo " $bold$lightred✘ "
         else
-                echo " $bold$lightgreen✔ "
+            echo " $bold$lightgreen✔ "
         fi)
         git_status=$(_show_git_status)
         if [[ -n "$git_status" ]]; then
-                git_status=":${git_status}"
+            git_status=":${git_status}"
         fi
         currentdir=$(pwd | sed "s/${sedhome}/~/g")
         battest=$(acpi | tr ' ' '\n' | grep '%' | tr -d '%,')
+        battest2=$(acpi)
         if [[ "$battest" == "100" ]]
         then
-                battery="$purple🔌⚡"
+            battery="$purple🌞"
         elif [[ "$battest" -gt "89" ]]
         then
-                battery="$green█ "
+            battery="$green█ "
         elif [[ "$battest" -gt "79" ]]
         then
-                battery="$green▇ "
+            battery="$green▇ "
         elif [[ "$battest" -gt "69" ]]
         then
-                battery="$green▆ "
+            battery="$green▆ "
         elif [[ "$battest" -gt "59" ]]
         then
-                battery="$green▅ "
+            battery="$green▅ "
         elif [[ "$battest" -gt "49" ]]
         then
-                battery="$green▄ "
+            battery="$green▄ "
         elif [[ "$battest" -gt "39" ]]
         then
-                battery="$orange▃ "
+            battery="$orange▃ "
         elif [[ "$battest" -gt "29" ]]
         then
-                battery="$orange▂ "
+            battery="$orange▂ "
         elif [[ "$battest" -gt "19" ]]
         then
-                battery="$red▁ "
+            battery="$red▁ "
         else
-                battery="$red✘!"
+            battery="$red✘!"
         fi
-        stopped=$(jobs -s | wc -l | tr -d " ")
-        running=$(jobs -r | wc -l | tr -d " ")
+        if [[ "$battest2" == *"Charging"* || "$battest2" == *"Full"* ]]
+        then
+            battery="$battery🔌⚡"
+        else
+            battery="$battery    "
+        fi
+        stopped=$(jobs -s | wc -l | tr -d ' ')
+        running=$(jobs -r | wc -l | tr -d ' ')
         dateget=$(date +"%a %D %X")
         filecount=$(ls -1 | wc -l | tr -d ' ')
         size=$(ls -lah | grep -m 1 total | /bin/sed "s/total //")
-        length=$(echo "$promusername@$promhostname on $interface jobs:$running$stopped $filecount files $size $mem $swap __ $dateget" | wc -c)
-        echo -en "\033[s\
-                \033[H\033[K"
-        echo -en "$BLACK$bold$namecolor"
-        if [ $length -gt $COLUMNS ]; then
-                echo -en "$promusername@$promhostname$normal$white$BLACK on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightorange$size $lightpurple$mem $lightgreen$swap $BLACK$(printf "\n%$((COLUMNS-26))s\n")$yellow$battery $lightpurple$dateget$normal$BLACK$green\033[K\n$currentdir \
-                        \033[K\
-                        \033[u\033[1A\033[1B$default$DEFAULT" # 26 = wc (__ dateget)
-                #POS
-                #if [ ${pos:0:1} == "2" ]; then if [ ${pos:1:1} == ";" ]; then echo; echo; fi; fi # Fix first line
+        length=$(echo "$usr@$hst on $interface jobs:$running$stopped $filecount files $size $mem $swap _____  $dateget" | wc -c)
+        echo -en "\033[s\033[H\033[K"
+        echo -en "$DEFAULT$bold$namecolor"
+        if [ "$length" -gt "$COLUMNS" ]; then
+            midline="$(printf "\n%$((COLUMNS-30))s\n")$pyellow$battery $lightpurple$dateget$normal$DEFAULT$green\033[K\n"
         else
-                echo -en "$promusername@$promhostname$normal$white$BLACK on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightorange$size $lightpurple$mem $lightgreen$swap $BLACK$(printf "%$((COLUMNS-length))s\n")$yellow$battery $lightpurple$dateget\033[K\n$normal$BLACK$green$currentdir \
-                        \033[K\
-                        \033[u\033[1A\033[1B$default$DEFAULT"
-                #POS
-                #if [[ ${pos:0:1} == "1" ||  ${pos:0:1} == "2" ]]; then if [ ${pos:1:1} == ";" ]; then echo; fi; fi # Fix first line
+            midline="$(printf "%$((COLUMNS-length))s\n")$pyellow$battery $lightpurple$dateget\033[K\n$normal$DEFAULT$green"
         fi
-}
+        echo -en "$usr@$hst$normal$white$DEFAULT on $bold$lightblue$interface$lightred jobs:$lightgreen$running$lightred$stopped$lightaqua $filecount files $lightyellow$size $lightpurple$mem $lightgreen$swap $DEFAULT$midline$currentdir \033[K\033[u\033[1A\033[1B$default$DEFAULT"
+    }
 echo -ne "\033]0;$interface @${HOSTNAME}\007"
 export PROMPT_COMMAND=prompt_command
 PS1="$pyellow\!\$errortest$normal\$git_status$normal$UNAME_COLOR$SYMBOL$FINAL_COLOR "
