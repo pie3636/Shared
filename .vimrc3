@@ -109,6 +109,10 @@ endfunction
 nnoremap + :call Comment()<CR>
 nnoremap - :call Uncomment()<CR>
 
+function! W()
+	execute ':silent w !sudo tee % < /dev/null' | :edit!
+endfunction
+
 " Fix arrow keys
 map OA <nop>
 map OD <nop>
