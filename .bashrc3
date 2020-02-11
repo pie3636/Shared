@@ -112,6 +112,7 @@ function cd { builtin cd "${@}" && ls; }
 function CPU() { for i in " " {1..7}; do grep "cpu$i" /proc/stat | awk '{usage=int(($2+$4)*10000/($2+$4+$5))/100} END {print usage "%"}' | sed -e "s/\%/%/g"; done; }
 function POS() { echo -ne "\033[6n" && read -s -d\[ foo && read -s -d R pos; } # Request position, discard first part of answer, store rest
 function CAL() { echo "scale=10;$*" | bc -l; }
+function MET() { play -n -c1 synth 0.001 sine 1000 pad `awk "BEGIN { print 60/$1 -.001 }"` repeat 9999999; }
 function ,() { pushd "$1" > /dev/null; }
 function CL() {
 	git clone ssh://m.meloux@wawsrvrepo04.digital.local:29418/$1.git
