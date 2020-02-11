@@ -34,7 +34,7 @@ function! WritePre()
 	" set expandtab | retab! 8
 	" %s/\s\+$//e
 	%s/ / /ge
-	call Indent()
+	" call Indent()
 	call winrestview(l:save)
 endfunction
 
